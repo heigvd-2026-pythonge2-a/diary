@@ -1,0 +1,24 @@
+[project]
+name = "slot"
+version = "0.1.0"
+description = "Une machine à sous animée dans le terminal"
+readme = "README.md"
+authors = [
+    { name = "Yves Chevallier", email = "yves.chevallier@heig-vd.ch" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "rich>=15.0.0",
+]
+
+[project.scripts]
+slot = "slot.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
