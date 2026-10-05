@@ -6,6 +6,9 @@
 - [x] Rôle de `__init__.py`
 - [x] Exercice sur les paramètres de fonctions
 
+- [ ] Notion d'itérable
+- [ ] Variables cachées (`__iter__`, `__next__`, `__getitem__`, `__len__`)
+
 ## Création d'un projet Python
 
 En Python, un projet est généralement un répertoire contenant un ensemble de fichiers. On y retrouve notament:
