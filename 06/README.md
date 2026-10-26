@@ -1,26 +1,56 @@
 # Semaine 06/16
 
-- [x] Fonction de hashage
+- [x] Fonction de hachage
 - [x] Git
 
-## Fonction de Hashage
+## Fonction de hachage
 
-Une fonction de hashage est une fonction qui prend en entrée des données de taille variable et produit une sortie de taille fixe, appelée "empreinte" ou "hash". Les fonctions de hashage sont largement utilisées en cryptographie, en sécurité informatique et dans les structures de données.
+### L'idée
 
-Il s'agit d'une transformation mathématique **non-bijective**. L'opération dans un sens est triviale et rapide, mais l'opération inverse est extrêmement difficle, voire impossible, car il existe une infinité de valeurs d'entrée possibles pour une valeur de sortie donnée.
+Une fonction de hachage prend en entrée des données de **taille quelconque** (un mot, un fichier de 10 Go, une image...) et produit en sortie une valeur de **taille fixe**, appelée *empreinte* (ou *hash*, ou *condensat*). On peut la voir comme une empreinte digitale: elle est courte, elle identifie quasiment à coup sûr son propriétaire, mais elle ne permet pas de le reconstituer.
 
-Les fonctions de hachage les plus courantes sont:
+Essayons en Python avec le module standard `hashlib`:
 
-- [MD5](https://fr.wikipedia.org/wiki/MD5) (RFC [1321](https://www.rfc-editor.org/rfc/rfc1321))
-- [SHA-1](https://fr.wikipedia.org/wiki/SHA-1) (RFC [3174](https://www.rfc-editor.org/rfc/rfc3174))
-- [SHA-256](https://fr.wikipedia.org/wiki/SHA-2) (RFC [6234](https://www.rfc-editor.org/rfc/rfc6234))
-- [SHA-512](https://fr.wikipedia.org/wiki/SHA-2)
-- [SHA-3](https://fr.wikipedia.org/wiki/SHA-3)
-- [Blake2](https://fr.wikipedia.org/wiki/BLAKE_(fonction_de_hachage))
+```python
+>>> import hashlib
+>>> hashlib.sha256(b"Hello World").hexdigest()
+'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e'
+>>> hashlib.sha256(b"Hello World!").hexdigest()
+'7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069'
+```
 
-Elles fonctionnent toutes sur le même principe: elles prennent un message en entrée le mélangent avec des opérations logiques et arithmétiques pour produire un hash unique.
+Quatre propriétés sont importantes à retenir:
 
-Par exemple une fonction simplifiée de hashage inspirée de MD5 pourrait ressembler à ceci:
+1. **Déterministe**: la même entrée donne toujours la même empreinte.
+2. **Taille fixe**: SHA-256 produit toujours 256 bits (64 caractères hexadécimaux), que l'entrée fasse 1 octet ou 1 To.
+3. **Effet avalanche**: un seul caractère de différence (le `!` ci-dessus) change complètement l'empreinte. Impossible de deviner que les deux entrées se ressemblent.
+4. **À sens unique**: calculer l'empreinte est rapide, mais retrouver l'entrée à partir de l'empreinte est en pratique impossible.
+
+Pourquoi est-ce impossible de revenir en arrière ? Parce que la fonction n'est pas **bijective**: il existe une infinité d'entrées possibles mais seulement $2^{256}$ sorties. Plusieurs entrées différentes partagent donc forcément la même empreinte (on parle de *collision*). Il n'y a pas « une » entrée à retrouver, et une bonne fonction de hachage est justement conçue pour qu'on ne puisse pas en fabriquer une volontairement.
+
+### Les fonctions courantes
+
+| Fonction | Taille de l'empreinte | Statut |
+|----------|-----------------------|--------|
+| [MD5](https://fr.wikipedia.org/wiki/MD5) (RFC [1321](https://www.rfc-editor.org/rfc/rfc1321)) | 128 bits | Cassée, à éviter pour la sécurité |
+| [SHA-1](https://fr.wikipedia.org/wiki/SHA-1) (RFC [3174](https://www.rfc-editor.org/rfc/rfc3174)) | 160 bits | Cassée, encore utilisée par Git |
+| [SHA-256](https://fr.wikipedia.org/wiki/SHA-2) (RFC [6234](https://www.rfc-editor.org/rfc/rfc6234)) | 256 bits | Standard actuel |
+| [SHA-512](https://fr.wikipedia.org/wiki/SHA-2) | 512 bits | Standard actuel |
+| [SHA-3](https://fr.wikipedia.org/wiki/SHA-3) | variable | Standard récent |
+| [Blake2](https://fr.wikipedia.org/wiki/BLAKE_(fonction_de_hachage)) | variable | Rapide, moderne |
+
+« Cassée » signifie qu'on sait fabriquer deux entrées différentes avec la même empreinte. Pour vérifier qu'un téléchargement n'est pas corrompu, MD5 suffit encore. Pour de la sécurité (mots de passe, signatures), il faut SHA-256 ou mieux.
+
+### Comment ça marche à l'intérieur
+
+Toutes ces fonctions suivent le même schéma:
+
+1. On **complète** le message pour que sa longueur soit un multiple d'une taille de bloc (64 octets pour MD5).
+2. On part d'un **état initial** fixé par la norme (quelques nombres de 32 bits).
+3. On **mélange** chaque bloc du message avec l'état, en répétant des dizaines de fois des additions, des opérations logiques (ET, OU, OU-exclusif) et des rotations de bits.
+4. L'état final, converti en hexadécimal, est l'empreinte.
+
+Le but du mélange est que chaque bit de l'entrée influence tous les bits de la sortie. Voici une version jouet inspirée de MD5 (le vrai algorithme est dans [md5.py](md5.py), cette version simplifiée dans [mddummy.py](mddummy.py)). Inutile de comprendre chaque ligne: repérez simplement les 5 étapes numérotées dans les commentaires.
 
 ```python
 def mddummy(message):
@@ -28,8 +58,8 @@ def mddummy(message):
     if isinstance(message, str):
         message = message.encode("utf-8")
 
-    # Valeurs uniques définie dans le protocole
-    MASK = 0xFFFFFFFF
+    # Constantes définies dans la norme (ici une version réduite)
+    MASK = 0xFFFFFFFF  # Pour rester sur 32 bits
     K = [0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a]
     S = [7, 12, 17, 22, 5, 9]
 
@@ -71,22 +101,36 @@ def mddummy(message):
     return b"".join(x.to_bytes(4, "little") for x in (a0, b0, c0, d0)).hex()
 ```
 
-Dans un terminal Linux vous pouvez utiliser les fonctions de hachage pour vérifier l'intégrité d'un fichier:
+### En pratique dans un terminal
+
+Les fonctions de hachage servent très souvent à vérifier l'**intégrité** d'un fichier: un site de téléchargement publie l'empreinte de son fichier, vous calculez celle du fichier reçu, et si les deux sont identiques le fichier n'a pas été altéré en route.
 
 ```bash
 echo "Hello World" > test.txt
-md5sum test.txt # affiche le hash MD5 du fichier
-sha1sum test.txt # affiche le hash SHA-1 du fichier
-sha256sum test.txt # affiche le hash SHA-256 du fichier
+md5sum test.txt     # affiche le hash MD5 du fichier
+sha1sum test.txt    # affiche le hash SHA-1 du fichier
+sha256sum test.txt  # affiche le hash SHA-256 du fichier
 ```
+
+```text
+$ sha256sum test.txt
+d2a84f4b8b650937ec8f73cd8be2c74add5a911ba64df27458ed8229da804a26  test.txt
+```
+
+Modifiez une lettre dans `test.txt` et relancez la commande: l'empreinte est entièrement différente.
 
 ## Git
 
-Git est un système de contrôle de version distribué qui ne fonctionne pas sur une successions de numéro de versions. Au lieu de cela, Git utilise un système de hashage pour identifier de manière unique chaque état du projet. Chaque commit dans Git est identifié par un hash SHA-1, ce qui permet de garantir l'intégrité et la traçabilité des modifications.
+Pourquoi parler de hachage avant Git ? Parce que Git repose entièrement dessus. Beaucoup d'outils de gestion de versions numérotent les versions (v1, v2, v3...). Git fait autrement: **chaque contenu est identifié par son empreinte SHA-1**. Un fichier, un dossier ou un commit ont pour « nom » le hash de leur contenu. Deux conséquences:
+
+- Deux machines qui ont le même contenu calculent le même identifiant, sans avoir besoin de se coordonner. C'est ce qui rend Git *distribué*.
+- Si on modifie un contenu, son identifiant change. On ne peut donc pas altérer l'historique discrètement.
+
+Les hash font 40 caractères hexadécimaux, mais Git accepte qu'on n'en tape que les premiers (en général 7 suffisent) tant qu'il n'y a pas d'ambiguïté.
 
 ### Plomberie Git
 
-Prenons un exemple:
+Pour comprendre comment Git stocke les choses, regardons ce qu'il écrit réellement sur le disque. Créons un dépôt vide:
 
 ```bash
 mkdir project # On crée un dossier de projet
@@ -97,7 +141,7 @@ rm -rf .git/hooks # On supprime les hooks qui ne nous intéressent pas ici
 tree .git # On affiche l'arborescence du dossier .git
 ```
 
-On va obtenir ceci:
+On obtient ceci:
 
 ```text
 .git
@@ -110,7 +154,7 @@ On va obtenir ceci:
     └── pack
 ```
 
-Il s'agit de la base de données Git. Le dossier `project` est maintnant un **référentiel** Git. Ajoutons un fichier à la base:
+Le dossier caché `.git` est la **base de données** de Git: tout l'historique du projet y sera stocké. Le dossier `project` est maintenant un **dépôt** Git (on dit aussi *référentiel* ou *repository*). Pour l'instant `objects` est vide. Ajoutons un fichier:
 
 ```bash
 echo "Foo" > foo.txt     # On crée un fichier foo.txt
@@ -118,24 +162,28 @@ git add foo.txt          # On ajoute le fichier à l'index (il va être ajouté 
 tree .git/objects        # On affiche l'arborescence du dossier .git/objects
 ```
 
-On observe qu'un fichier a été créé:
+Un fichier est apparu dans `objects`:
 
 ```text
 .git/objects
 ├── bc
-│   └── 56c4d89448a963d0b6486989809d653dab9a97
+│   └── 56c4d89448a963d0b6486989809d653dab9a97
 ├── info
 └── pack
 ```
 
-Le fichier `bc/56c4d89448a963d0b6486989809d653dab9a97` est le **blob** qui contient le contenu du fichier `foo.txt`. Le nom du fichier est le hash SHA-1 du contenu du fichier. Pour vérifier cela, on peut calculer le hash du contenu de `foo.txt` mais Git ajoute devant le contenu un en-tête `blob <taille>\0`. Pour vérifier le hash, on peut utiliser la commande suivante:
+#### Le blob: le contenu d'un fichier
+
+Ce fichier `bc/56c4d89448a963d0b6486989809d653dab9a97` est un **blob**. Il contient le contenu de `foo.txt`, et son nom est le hash SHA-1 de ce contenu (Git découpe le hash en `bc` + le reste pour ne pas avoir des milliers de fichiers dans un seul dossier).
+
+Vérifions-le nous-mêmes. Attention, Git ne hache pas le contenu brut: il place devant un petit en-tête `blob <taille>\0` (le type d'objet, un espace, la taille en octets, puis un octet nul). Si on refait la même chose à la main, on retrouve exactement le même hash:
 
 ```bash
 $ { printf 'blob %s\0' "$(wc -c < foo.txt)"; cat foo.txt; } | sha1sum
 bc56c4d89448a963d0b6486989809d653dab9a97  -
 ```
 
-Autre détail le fichier stocké dans l'aborescence Git est compressé avec l'algorithme zlib (une sorte de .zip). Pour vérifier on peut décompresser le fichier avec Python:
+Autre détail: le fichier stocké dans `.git/objects` est compressé avec zlib (le même algorithme que dans un `.zip`), c'est pourquoi on ne peut pas le lire avec `cat`. On peut le décompresser avec Python:
 
 ```python
 $ python3 -c "import zlib; print(zlib.decompress(open('.git/objects/bc/56c4d89448a963d0b6486989809d653dab9a97', 'rb').read()))"
@@ -143,41 +191,43 @@ $ python3 -c "import zlib; print(zlib.decompress(open('.git/objects/bc/56c4d8944
 b'blob 4\x00Foo\n'
 ```
 
-On retrouve bien le contenu du fichier `foo.txt` précédé de l'en-tête `blob 4\0`. Le `4` correspond à la taille du contenu du fichier (4 octets pour "Foo\n").
+On retrouve bien l'en-tête `blob 4` suivi du contenu `Foo\n`. Le `4` est la taille du contenu: trois lettres plus le retour à la ligne ajouté par `echo`.
 
-Retenons simplement qu'un objet `blob` c'est le fichier lui-même.
+À retenir: **un blob, c'est le contenu d'un fichier, rien d'autre**. Il ne connaît ni son nom, ni sa date, ni son auteur.
 
-Si on fait maintenant un `commit`:
+#### Le tree et le commit
+
+Faisons maintenant un commit:
 
 ```bash
 git commit -m "Premier commit" # On fait un commit
 tree .git/objects # On affiche l'arborescence du dossier .git/objects
 ```
 
-On obtient:
+Deux nouveaux objets sont apparus:
 
 ```text
 .git/objects
 ├── 3c
-│   └── ae430e9afab284dcebb550c84a6959b78706ca
+│   └── ae430e9afab284dcebb550c84a6959b78706ca
 ├── 8f
-│   └── 3761e066d5f3c0d3fa733fa2cb20e4806b952e
+│   └── 3761e066d5f3c0d3fa733fa2cb20e4806b952e
 ├── bc
-│   └── 56c4d89448a963d0b6486989809d653dab9a97
+│   └── 56c4d89448a963d0b6486989809d653dab9a97
 ├── info
 └── pack
 ```
 
-On connaît déjà `bc/56c4d` c'est notre contenu `Foo`. La commande `git` `cat-file` permet de faire pour nous la décompression et afficher le contenu de l'objet, c'est plus simple:
+On connaît déjà `bc56c4`, c'est notre blob `Foo`. Pour lire les autres, plutôt que de décompresser à la main, Git fournit la commande `git cat-file -p` qui affiche n'importe quel objet de façon lisible:
 
 ```bash
 $ git cat-file -p 8f37
 100644 blob bc56c4d89448a963d0b6486989809d653dab9a97    foo.txt
 ```
 
-Ce fichier est nommé un `tree` (arbre). Il contient la liste des fichiers d'un dossier. Il lie le nom du fichier `foo.txt` à son contenu via son hash `bc56c4`. Le `100644` est le mode du fichier (droits d'accès).
+Cet objet est un **tree** (arbre). Il représente un **dossier**: la liste de ses fichiers, avec pour chacun son nom, ses droits d'accès (`100644` = fichier normal) et le hash du blob qui contient son contenu. C'est lui qui fait le lien entre le nom `foo.txt` et le contenu `bc56c4`. Si le dossier contenait des sous-dossiers, le tree pointerait vers d'autres trees.
 
-Enfin le troisième fichier est le `commit`:
+Le troisième objet est le **commit**:
 
 ```bash
 $ git cat-file -p 3cae43
@@ -188,27 +238,35 @@ committer Yves Chevallier <yves.chevallier@heig-vd.ch> 1793029399 +0100
 Premier commit
 ```
 
-C'est donc aussi un fichier texte qui contient le hash du `tree`.
+C'est aussi un simple fichier texte. Il contient le hash du tree racine (l'état complet du projet à cet instant), l'auteur, la date (en secondes depuis 1970) et le message. Les commits suivants contiendront en plus une ligne `parent` avec le hash du commit précédent: c'est ainsi que se forme l'historique, en chaîne.
 
-On a donc trois fichiers liés entre eux par des hash SHA-1:
+#### Pourquoi l'historique est infalsifiable
+
+Nos trois objets sont liés par leurs hash:
 
 ```text
 commit 3cae43 --> tree 8f3761 --> blob bc56c4
 ```
 
-Si on change le contenu du fichier `foo.txt` le `tree` est corrompu donc il faut changer son hash, ce qui invalide le `commit`. C'est ainsi que Git garantit l'intégrité de l'historique des versions. Changer un fichier revient est donc impossible.
+| Objet | Ce qu'il représente | Ce qu'il contient |
+|-------|---------------------|-------------------|
+| blob | un fichier | le contenu brut |
+| tree | un dossier | noms de fichiers → hash de blobs ou de trees |
+| commit | une version du projet | hash du tree racine, auteur, date, message, hash du commit parent |
 
-### Fichier de configuration
+Imaginons qu'on veuille modifier `foo.txt` dans un ancien commit sans que personne ne s'en aperçoive. Le contenu change, donc le hash du blob change. Le tree contient ce hash, donc le tree change et son hash aussi. Le commit contient le hash du tree, donc le commit change à son tour, puis tous les commits qui le suivent. Toute modification du passé se propage jusqu'au présent et devient visible. C'est ainsi que Git garantit l'intégrité de l'historique.
 
-Git utilise principalement deux fichiers de configuration:
+### Fichiers de configuration
+
+Git lit principalement deux fichiers de configuration:
 
 `.git/config`
-: fichier de configuration local au dépôt Git. Il contient les paramètres spécifiques à ce dépôt, tels que les informations sur le dépôt distant, les branches, les hooks, etc.
+: configuration **locale** au dépôt. Elle contient les paramètres propres à ce projet: l'adresse du dépôt distant, les branches suivies, etc.
 
 `~/.gitconfig`
-: fichier de configuration global pour l'utilisateur. Il contient les paramètres qui s'appliquent à tous les dépôts Git de l'utilisateur, tels que le nom d'utilisateur, l'adresse e-mail, les alias de commandes, etc.
+: configuration **globale** de l'utilisateur. Elle s'applique à tous vos dépôts: votre nom, votre e-mail, votre éditeur, vos alias de commandes, etc.
 
-Dans votre fichier global vous aurez par exemple:
+Un paramètre local a priorité sur le même paramètre global. Votre fichier global ressemble à ceci:
 
 ```text
 $ cat ~/.gitconfig
@@ -223,9 +281,9 @@ $ cat ~/.gitconfig
     default = current
 ```
 
-Vous y retrouvez votre éditeur préféré pour les messages de commit, votre nom et votre email. Vous pouvez aussi configurer le comportement par défaut de `git pull` et `git push`.
+On y trouve le nom et l'e-mail qui apparaîtront dans la ligne `author` de vos commits, l'éditeur ouvert pour saisir les messages de commit, et le comportement par défaut de `git pull` et `git push`.
 
-Quand vous exécutez les commandes suivantes vous ne faites que modifier le fichier de configuration global `~/.gitconfig`:
+Les commandes suivantes, que vous avez sûrement déjà tapées, ne font rien d'autre qu'écrire dans ce fichier. Vous pouvez donc aussi l'éditer directement:
 
 ```bash
 git config --global user.name "Votre Nom"
@@ -234,54 +292,91 @@ git config --global user.email "votre.email@exemple.com"
 
 ### Commandes utiles
 
-Voici les commandes de base fondamentales pour travailler avec Git:
+Pour comprendre les commandes, il faut avoir en tête les quatre zones entre lesquelles circulent vos modifications:
 
 ```text
-git init    # Crée un nouveau dépôt Git dans le répertoire actuel (crée le dossier `.git`)
-git fetch   # Récupère les modifications depuis le dépôt distant sans les fusionner avec votre branche locale.
-git status  # Affiche l'état actuel du dépôt, y compris les fichiers modifiés, les fichiers en attente de commit et les branches.
-git add     # Ajoute des fichiers à l'index (staging area) pour les préparer à être commités.
-git commit  # Enregistre les modifications dans l'historique du dépôt avec un message de commit.
-git push    # Envoie les commits locaux vers le dépôt distant.
-git log     # Affiche l'historique des commits dans le dépôt.
+ Répertoire de     git add      Index         git commit     Dépôt local    git push     Dépôt distant
+ travail         ---------->  (staging)    ------------>   (.git)       ---------->   (GitHub, ...)
+ (vos fichiers)                                                          <----------
+                                                                          git fetch
 ```
 
-En plus de cela vous avez des "méta-commandes" qui combinent plusieurs étapes en une seule commande:
+- Le **répertoire de travail** contient les fichiers que vous éditez.
+- L'**index** (ou *staging area*) est la liste de ce qui fera partie du prochain commit. Il permet de ne valider qu'une partie de vos modifications.
+- Le **dépôt local** est la base de données `.git` vue plus haut.
+- Le **dépôt distant** est une copie du dépôt sur un serveur, partagée avec les autres.
+
+Les commandes de base, une par étape:
 
 ```text
-git clone   # Crée une copie locale d'un dépôt distant (git init + git fetch + git remote add + git checkout)
-git pull    # Récupère les modifications depuis le dépôt distant et les fusionne avec votre branche locale (git fetch + git merge)
-git commit -am "message" # Fait un git add de tous les fichiers modifiés puis commit avec le message `message`
+git init    # Crée un nouveau dépôt Git dans le répertoire actuel (crée le dossier .git)
+git status  # Affiche l'état du dépôt: fichiers modifiés, fichiers dans l'index, branche courante
+git add     # Ajoute des fichiers à l'index pour les préparer à être commités
+git commit  # Enregistre le contenu de l'index dans l'historique avec un message
+git log     # Affiche l'historique des commits
+git fetch   # Récupère les commits du dépôt distant sans toucher à votre branche locale
+git push    # Envoie vos commits locaux vers le dépôt distant
 ```
 
-Si vous travaillez avec un dépôt distant (qui peut être un dossier sur un serveur ou un service comme GitHub) vous avez besoin d'ajouter des informations sur ce dépôt distant. Pour cela vous utilisez la commande `git remote add`:
+En plus de cela, certaines commandes enchaînent plusieurs étapes en une seule:
+
+```text
+git clone <url>          # Copie un dépôt distant (git init + git remote add + git fetch + git checkout)
+git pull                 # Récupère et intègre les commits distants (git fetch + git merge ou git rebase)
+git commit -am "message" # git add de tous les fichiers déjà suivis puis commit (ne prend pas les nouveaux fichiers)
+```
+
+#### Dépôt distant
+
+Pour travailler avec un dépôt distant (un dossier sur un serveur ou un service comme GitHub), il faut dire à Git où il se trouve avec `git remote add`:
 
 ```bash
 git remote add origin <url>  # Ajoute un dépôt distant nommé "origin" avec l'URL spécifiée
 git remote -v                # Affiche les dépôts distants configurés
 ```
 
-`origin` est une convention pour nommer le dépôt distant principal, mais vous pouvez utiliser n'importe quel nom. L'URL peut être un chemin local ou une URL HTTP/HTTPS/SSH vers un dépôt Git.
-Vous pouvez donc avoir autant de dépôts distants que vous le souhaitez, chacun avec un nom unique.
+`origin` est le nom conventionnel du dépôt distant principal (c'est celui que `git clone` crée automatiquement), mais vous pouvez en choisir un autre. L'URL peut être un chemin local ou une URL HTTPS ou SSH. Un même dépôt local peut avoir plusieurs dépôts distants, chacun avec un nom différent.
 
-Pour synchroniser votre dépôt local avec le dépôt distant vous devez respecter une règle importante:
+#### Synchroniser avec le dépôt distant
 
-> Vous ne pouvez pas pousser vos modifications vers le dépôt distant si votre branche locale est en retard par rapport à la branche distante. Dans ce cas, vous devez d'abord récupérer les modifications du dépôt distant avec `git pull`, résoudre les éventuels conflits, puis pousser vos modifications avec `git push`.
+Une règle importante:
 
-L'opération de `pull` va exécuter selon votre préférence l'une ou l'autre des stratégie de fusion:
+> Vous ne pouvez pas pousser vos commits si la branche distante contient des commits que vous n'avez pas. Dans ce cas, vous devez d'abord récupérer ces commits avec `git pull`, résoudre les éventuels conflits, puis pousser avec `git push`.
 
-1. merge: ajoute un nouveau commit avec deux parents.
-2. rebase: rejoue le commit par dessus celui récupéré du dépôt distant.
+Cette situation arrive dès que vous êtes plusieurs: un collègue a poussé pendant que vous travailliez. Votre historique et le sien ont divergé à partir d'un commit commun:
 
-En règle général, on préfère de loin le `rebase` qui pollue moins l'historique
+```text
+          A---B   (vous, en local)
+         /
+    ---o
+         \
+          C       (origin, poussé par un collègue)
+```
+
+Lors du `git pull`, Git doit réconcilier les deux. Il existe deux stratégies, et le fichier de configuration (section `[pull]`) choisit laquelle utiliser par défaut:
+
+1. **merge**: crée un commit de fusion `M` avec deux parents. L'historique garde la trace de la divergence.
+
+   ```text
+             A---B---M
+            /       /
+       ---o--------C
+   ```
+
+2. **rebase**: déplace vos commits `A` et `B` pour les rejouer par dessus `C`. L'historique reste une ligne droite, comme si vous aviez commencé votre travail après votre collègue.
+
+   ```text
+       ---o---C---A'---B'
+   ```
+
+En règle générale, on préfère le rebase: il donne un historique linéaire, bien plus lisible. C'est pourquoi le `~/.gitconfig` plus haut contient `rebase = true`.
 
 ### Paramétrer Git
 
-Le plus utile c'est paramétrer un alias pour avoir un `log` plus lisible. Je vous recommande celui-ci:
+Le réglage le plus utile au quotidien est un alias pour obtenir un `log` plus lisible. Je vous recommande celui-ci:
 
 ```bash
 git config --global alias.lg "log --graph --all --decorate --color=auto -n 30 --pretty=format:'%C(bold blue)%h%C(reset) %C(green)%<(14,trunc)%ar%C(reset) %s %C(auto)%d%C(dim white) - %an%C(reset)'"
 ```
 
-Ca vous permet d'utiliser `git lg` à la place de `git log`.
-
+Vous pouvez ensuite taper `git lg` à la place de `git log`: chaque commit tient sur une ligne, avec son hash court, son âge, son message, ses branches et son auteur, et les branches sont dessinées sous forme de graphe.
