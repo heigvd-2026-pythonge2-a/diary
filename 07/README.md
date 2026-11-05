@@ -1,15 +1,15 @@
 # Semaine 07/16
 
-- [ ] Paquet Pint
-- [ ] Interface en ligne de commande
-  - [ ] Argparse
-  - [ ] Click
-  - [ ] Typer
-- [ ] Expressions régulières
-  - [ ] Introduction
-  - [ ] Syntaxe
-  - [ ] Fonctions
-  - [ ] Exemples
+- [x] Paquet Pint
+- [x] Interface en ligne de commande
+  - [x] Argparse
+  - [x] Click
+  - [x] Typer
+- [x] Expressions régulières
+  - [x] Introduction
+  - [x] Syntaxe
+  - [x] Fonctions
+  - [x] Exemples
 
 ## Pint
 
