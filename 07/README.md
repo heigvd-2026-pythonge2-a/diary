@@ -42,13 +42,13 @@ Depuis Python, on peut alors tester le module Pint:
 2.0 meter / second
 ```
 
-Pint est pratique pour la conversion d'unités hybrides, ajouter des inches à des centimètres, ou encore pour gérer des unités de mesure complexes. Il est également possible de définir ses propres unités et de les utiliser dans les calculs.
+Pint est pratique pour la conversion d'unités hybrides, additionner des pouces et des centimètres, ou encore pour gérer des unités de mesure complexes. Il est également possible de définir ses propres unités et de les utiliser dans les calculs.
 
 ## Interface en ligne de commande (CLI)
 
-Dès qu'un script Python est écrit on souhaite avoir une interraction propre avec le terminal. Cela implique de:
+Dès qu'un script Python est écrit, on souhaite avoir une interaction propre avec le terminal. Cela implique de:
 
-- Renseigner l'utilisateur de comment utiliser le script
+- Renseigner l'utilisateur sur la manière d'utiliser le script
 - Donner accès à une aide
 - Gérer les arguments et options passés au script
 
@@ -75,11 +75,11 @@ x1 = 1.0
 x2 = -3.0
 ```
 
-L'option `-i` indique que l'on veut indiquer les solutions imaginaires. L'option `-v` pour *verbose* est cumulative et peut être répétée pour augmenter le niveau de verbosité. Par exemple `-vvv` très verbeux.
+L'option `-i` indique que l'on veut afficher les solutions imaginaires. L'option `-v` pour *verbose* est cumulative et peut être répétée pour augmenter le niveau de verbosité. Par exemple, `-vvv` est très verbeux.
 
-Le `--` est une bizarre convention des terminaux pour indiquer que les arguments suivants ne sont pas des options mais des arguments positionnels. Dans notre exemple, les trois derniers arguments sont les coefficients de l'équation quadratique. Il est nécessaire ici sinon le terminal pourrait interpréter `-3` comme une option et non comme un argument. Cet argument `--` est donc lu par le script et non par le terminal, c'est à lui de l'interpréter.
+Le `--` est une convention étrange des terminaux pour indiquer que les arguments suivants ne sont pas des options mais des arguments positionnels. Dans notre exemple, les trois derniers arguments sont les coefficients de l'équation quadratique. Il est nécessaire ici, sinon le programme pourrait interpréter `-3` comme une option et non comme un argument. Cet argument `--` est donc lu par le script et non par le terminal: c'est à lui de l'interpréter.
 
-Enfin les arguments positionnels sont les coefficients de l'équation quadratique.
+Enfin, les arguments positionnels sont les coefficients de l'équation quadratique.
 
 Pour ne pas répéter la résolution et l'affichage dans chaque variante, on place ce code dans un module `quad.py` que tous les scripts importent. Seule la lecture de la ligne de commande change d'un exemple à l'autre.
 
@@ -124,7 +124,7 @@ def show(solutions, a, b, c, verbose=0):
 
 ### sys et argv
 
-Le module système de Python donne accès à la liste `argv` qui contient les arguments passés au script. C'est exactement le même contenu que ce que l'on aurait en C avec `argc` et `argv`. Le premier élément de la liste est le nom du script, et les éléments suivants sont les arguments passés au script. Il n'y a plus de `argc` pour compter le nombre d'arguments car une liste Python est dynamique et peut être parcourue avec une boucle `for` et donc contient déjà une longueur.
+Le module système de Python donne accès à la liste `argv` qui contient les arguments passés au script. C'est exactement le même contenu que ce que l'on aurait en C avec `argc` et `argv`. Le premier élément de la liste est le nom du script, et les éléments suivants sont les arguments passés au script. Il n'y a plus de `argc` pour compter le nombre d'arguments, car une liste Python connaît déjà sa longueur (`len(sys.argv)`) et peut être parcourue directement avec une boucle `for`.
 
 ```python
 # quad-sys.py
@@ -186,7 +186,7 @@ Tout est à la charge du programmeur: reconnaître le `--`, accepter les options
 
 ### argparse
 
-Plutôt que de gérer manuellement tous les cas de figure, la position des arguments et des options, on utilise argparse. On *déclare* les arguments et les options attendus, et le module se charge de lire `sys.argv`, de convertir les valeurs, de générer l'aide (`-h`/`--help`) et d'afficher les erreurs avec le bon code de retour.
+Plutôt que de gérer manuellement tous les cas de figure (la position des arguments, les options), on utilise `argparse`. On *déclare* les arguments et les options attendus, et le module se charge de lire `sys.argv`, de convertir les valeurs, de générer l'aide (`-h`/`--help`) et d'afficher les erreurs avec le bon code de retour.
 
 ```python
 # quad-argparse.py
@@ -246,7 +246,7 @@ x2 = -3.0
 
 ### click
 
-Click utilise un mécanisme puissant de Python appelé *decorators*. Un décorateur est une fonction qui prend une autre fonction en argument et qui retourne une nouvelle fonction. Cela permet de modifier le comportement d'une fonction sans la modifier directement. Dans le cas de Click, les décorateurs sont utilisés pour définir les options et les arguments d'une commande. Click n'est pas dans la bibliothèque standard, il faut l'ajouter au projet avec `uv add click`.
+Click utilise un mécanisme puissant de Python appelé *décorateurs* (*decorators*). Un décorateur est une fonction qui prend une autre fonction en argument et qui retourne une nouvelle fonction. Cela permet de modifier le comportement d'une fonction sans la modifier directement. Dans le cas de Click, les décorateurs sont utilisés pour définir les options et les arguments d'une commande. Click ne fait pas partie de la bibliothèque standard, il faut l'ajouter au projet avec `uv add click`.
 
 ```python
 # quad-click.py
@@ -272,7 +272,7 @@ if __name__ == "__main__":
     main()
 ```
 
-Les décorateurs se lisent de bas en haut: chaque `@click.argument` ou `@click.option` ajoute un paramètre, et `@click.command` transforme la fonction en commande. Les noms des paramètres de `main` doivent correspondre aux noms déclarés (`imaginary`, `verbose`). `is_flag=True` correspond au `store_true` d'argparse et `count=True` à `action="count"`. Un seul bémol: contrairement à argparse, click ne devine pas qu'un `-3` est un nombre, le `--` est donc obligatoire.
+Les décorateurs se lisent de bas en haut: chaque `@click.argument` ou `@click.option` ajoute un paramètre, et `@click.command` transforme la fonction en commande. Les noms des paramètres de `main` doivent correspondre aux noms déclarés (`imaginary`, `verbose`). `is_flag=True` correspond au `store_true` d'argparse et `count=True` à `action="count"`. Un seul bémol: contrairement à `argparse`, Click ne devine pas qu'un `-3` est un nombre, le `--` est donc obligatoire.
 
 ```bash
 $ python quad-click.py --help
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     typer.run(main)
 ```
 
-Ici plus de décorateurs: la signature de la fonction *est* l'interface. Un paramètre sans valeur par défaut devient un argument positionnel, un paramètre avec valeur par défaut devient une option. Le type Python (`float`, `bool`, `int`) sert à la conversion et à la validation. `Annotated` permet d'attacher les métadonnées (nom court `-i`, texte d'aide, `count=True`) sans altérer le type, ce qui garde la fonction utilisable et testable comme n'importe quelle fonction Python. La *docstring* devient la description de la commande.
+Ici, plus de décorateurs: la signature de la fonction *est* l'interface. Un paramètre sans valeur par défaut devient un argument positionnel, un paramètre avec valeur par défaut devient une option. Le type Python (`float`, `bool`, `int`) sert à la conversion et à la validation. `Annotated` permet d'attacher les métadonnées (nom court `-i`, texte d'aide, `count=True`) sans altérer le type, ce qui garde la fonction utilisable et testable comme n'importe quelle fonction Python. La *docstring* devient la description de la commande.
 
 ```bash
 $ python quad-typer.py --help
@@ -347,7 +347,7 @@ x1 = 1.0
 x2 = -3.0
 ```
 
-Pour résumer, `sys.argv` convient à un script jetable, `argparse` est le choix par défaut puisqu'il ne nécessite aucune dépendance, et `click` ou `typer` s'imposent dès que l'interface grossit (sous-commandes, couleurs, complétion du shell).
+Pour résumer, `sys.argv` convient à un script jetable, `argparse` est le choix par défaut puisqu'il ne nécessite aucune dépendance, et Click ou Typer s'imposent dès que l'interface grossit (sous-commandes, couleurs, complétion du shell).
 
 ## Expressions régulières
 
